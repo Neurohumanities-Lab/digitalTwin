@@ -8,8 +8,10 @@ library(shinyscreenshot)
 library(shinyjs)
 library(reticulate)
 
+
 #charge python script for sending data to start recording
 source_python('data/oscStart.py')
+source_python('data/oscReceiveDataAsyncio.py')
 
 #create a default csv
 tibble(organ ="nose", value=1, time=0) %>%
@@ -82,7 +84,8 @@ ui <- dashboardPage(skin = "blue",
                      plotOutput("distPlot"))),
               column(8, 
                      box(title = "Biometrics along time", width = NULL, solidHeader = TRUE, status = "primary",
-                         plotlyOutput("distPlot2"))),
+                         plotlyOutput("distPlot2"),
+                         verbatimTextOutput("pruebaReceive"))),
               infoBoxOutput("emotionDetected")
               )#,
       # tabItem(tabName = "brain"
@@ -153,6 +156,8 @@ server <- function(input, output, session) {
   }
   )
   
+  #dataReceive <- py$init_main()
+  
   observeEvent(digitalFilter(),
                write.table(digitalFilter(), 
                            "data/digitalFilter.csv", 
@@ -200,6 +205,10 @@ server <- function(input, output, session) {
     ggplotly(timePlot) %>% layout(showlegend = FALSE)
   })
   
+  output$pruebaReceive <- renderPrint({
+    dataReceive()
+  })
+  
   envio <- reactiveValues(start=FALSE)
   shinyjs::disable("pause")
   
@@ -233,8 +242,7 @@ server <- function(input, output, session) {
     } else {
       shinyjs::enable("scene")
       runjs('document.getElementById("pause").style.backgroundColor = "orange";')
-    }
-    }
+      }}
     )
   
   observeEvent(input$stop, {
@@ -268,8 +276,6 @@ server <- function(input, output, session) {
   }
   )
   
-  
 }
   
-
 shinyApp(ui, server)
